@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ToolRow } from "@/components/ToolRow";
 import { TOOL_PLANS, USE_CASES } from "@/data/pricing";
@@ -76,7 +76,9 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setFormData(loadFormData());
+    startTransition(() => {
+      setFormData(loadFormData());
+    });
   }, []);
 
   useEffect(() => {

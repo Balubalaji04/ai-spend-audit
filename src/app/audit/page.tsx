@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { runAudit } from "@/lib/auditEngine";
 import type { AuditFormData, AuditResult } from "@/types/audit";
@@ -19,7 +19,9 @@ export default function AuditPage() {
     }
     try {
       const formData = JSON.parse(raw) as AuditFormData;
-      setResult(runAudit(formData));
+      startTransition(() => {
+        setResult(runAudit(formData));
+      });
     } catch {
       router.replace("/");
     }

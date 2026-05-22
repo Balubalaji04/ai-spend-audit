@@ -29,7 +29,7 @@ function evaluateRules(
 ): RuleMatch[] {
   const matches: RuleMatch[] = [];
   const planPrice = getPlanPrice(entry.toolName, entry.plan);
-  const { teamSize, tools } = formData;
+  const { tools } = formData;
 
   const hasTool = (name: ToolName) => tools.some((t) => t.toolName === name);
   const getTool = (name: ToolName) => tools.find((t) => t.toolName === name);

@@ -43,3 +43,17 @@ Daily development logs.
 **Blockers / what I'm stuck on:** CI failed on the first push because I hadn't run `npm run lint` locally — unused variables and a new ESLint rule (`react-hooks/set-state-in-effect`) blocked the build. Had to install Jest with `npm install` before `npm test` worked. The Copilot Enterprise rule and the general "seat bloat" rule both fired at once, which showed $117 instead of $100 until I learned to prioritize tool-specific rules over the general one. Wrapping `setState` in `startTransition` fixed lint but still feels like a workaround rather than fully understanding the rule.
 
 **Plan for tomorrow:** Build the results page — the animated savings hero, per-tool recommendation cards, and the Credex CTA.
+
+---
+
+## Day 4 — 2026-05-23
+
+**Hours worked:** 5
+
+**What I did:** Built the full results page — rebuilt the `/audit` page shell with loading and error states, built the SavingsHero component with a counting animation, built the per-tool RecommendationList sorted by savings amount, and built the three-state CredexCTA. Tested the full form → results flow manually with multiple test cases.
+
+**What I learned:** How to animate a number counting up using useEffect and setInterval. How to design for multiple user states (high savings vs already optimal vs moderate). What it actually feels like to use your own product for the first time — I noticed the counting animation makes the savings feel much more real than seeing a static number, and how jarring the jump from "Loading form…" on the home page to the full results page is without the skeleton loader (fixing that made the wait feel intentional).
+
+**Blockers / what I'm stuck on:** The audit page is a client component, so the page title had to go in a separate `layout.tsx` — I didn't know that at first. ESLint's `react-hooks/set-state-in-effect` rule blocked CI again when reading from localStorage on mount; wrapping updates in `startTransition` fixed it but I still don't fully get why that's different. Building three completely different CredexCTA layouts from one savings number took longer than expected. On mobile, the recommendation card header (tool name + savings badge) needed extra layout work so nothing overflowed at 375px width.
+
+**Plan for tomorrow:** Wire up the Anthropic API for the real AI summary, connect Supabase database for lead storage, and set up Resend for confirmation emails.

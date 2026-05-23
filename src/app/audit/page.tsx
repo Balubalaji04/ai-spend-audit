@@ -1,7 +1,13 @@
 "use client";
 
 import { startTransition, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { AuditPageSkeleton } from "@/components/AuditPageSkeleton";
+import { AuditSummary } from "@/components/AuditSummary";
+import { CredexCTA } from "@/components/CredexCTA";
+import { RecommendationList } from "@/components/RecommendationList";
+import { SavingsHero } from "@/components/SavingsHero";
 import { runAudit } from "@/lib/auditEngine";
 import type { AuditFormData, AuditResult } from "@/types/audit";
 
@@ -10,44 +16,93 @@ const PENDING_AUDIT_KEY = "pending-audit";
 export default function AuditPage() {
   const router = useRouter();
   const [result, setResult] = useState<AuditResult | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const raw = localStorage.getItem(PENDING_AUDIT_KEY);
+
     if (!raw) {
-      router.replace("/");
-      return;
+      startTransition(() => {
+        setError("No audit data found");
+        setIsLoading(false);
+      });
+      const timer = setTimeout(() => router.replace("/"), 2000);
+      return () => clearTimeout(timer);
     }
+
     try {
       const formData = JSON.parse(raw) as AuditFormData;
+      const auditResult = runAudit(formData);
       startTransition(() => {
-        setResult(runAudit(formData));
+        setResult(auditResult);
+        setIsLoading(false);
       });
-    } catch {
-      router.replace("/");
+    } catch (err) {
+      startTransition(() => {
+        setError(
+          err instanceof Error ? err.message : "Failed to run audit",
+        );
+        setIsLoading(false);
+      });
     }
   }, [router]);
 
-  if (!result) {
+  if (isLoading) {
+    return <AuditPageSkeleton />;
+  }
+
+  if (error !== null) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-400">
-        Loading…
+      <div className="flex min-h-screen items-center justify-center bg-zinc-950 px-4">
+        <div className="w-full max-w-md rounded-xl border border-zinc-800 bg-zinc-900 p-8 text-center shadow-lg">
+          <p className="text-4xl" aria-hidden>
+            ⚠️
+          </p>
+          <h1 className="mt-4 text-xl font-semibold text-white">
+            Something went wrong
+          </h1>
+          <p className="mt-2 text-sm text-zinc-400">{error}</p>
+          <Link
+            href="/"
+            className="mt-6 inline-block rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-500"
+          >
+            Start Over
+          </Link>
+        </div>
       </div>
     );
   }
 
+  if (result === null) {
+    return null;
+  }
+
   return (
-    <div className="flex min-h-screen flex-col items-center bg-zinc-950 px-4 py-12 text-zinc-100">
-      <h1 className="text-2xl font-semibold text-white">Audit results</h1>
-      <p className="mt-2 text-zinc-400">
-        Total savings:{" "}
-        <span className="font-medium text-emerald-400">
-          ${result.totalMonthlySavings}/mo
-        </span>{" "}
-        (${result.totalAnnualSavings}/yr)
-      </p>
-      <pre className="mt-8 max-w-2xl w-full overflow-auto rounded-lg border border-zinc-800 bg-zinc-900 p-4 text-left text-sm text-zinc-300">
-        {JSON.stringify(result, null, 2)}
-      </pre>
+    <div className="min-h-screen bg-zinc-950 text-zinc-100">
+      <header className="sticky top-0 z-10 border-b border-zinc-800 bg-zinc-950/95 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+          <Link
+            href="/"
+            className="shrink-0 text-base font-semibold text-white transition-colors hover:text-emerald-400 sm:text-lg"
+          >
+            SpendScope
+          </Link>
+          <Link
+            href="/"
+            className="shrink-0 rounded-lg border border-zinc-700 px-2.5 py-1.5 text-xs font-medium text-zinc-300 transition-colors hover:border-zinc-600 hover:bg-zinc-900 hover:text-white sm:px-3 sm:text-sm"
+          >
+            Start a new audit
+          </Link>
+        </div>
+      </header>
+
+      <main className="mx-auto w-full max-w-4xl space-y-6 px-4 py-6 sm:space-y-8 sm:px-6 sm:py-10">
+        <SavingsHero result={result} />
+        <AuditSummary result={result} />
+        <RecommendationList result={result} />
+        <CredexCTA result={result} />
+      </main>
     </div>
   );
 }

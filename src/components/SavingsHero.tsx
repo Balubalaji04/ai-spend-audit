@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 import { formatCurrency, formatCurrencyAnnual } from "@/lib/utils";
 import type { AuditResult } from "@/types/audit";
 
@@ -23,16 +23,15 @@ export function SavingsHero({ result }: SavingsHeroProps) {
   const optimizationCount = countOptimizations(result);
 
   useEffect(() => {
-    if (!hasSavings) {
-      setDisplayAmount(0);
-      return;
-    }
+    if (!hasSavings) return;
 
     const total = result.totalMonthlySavings;
     const increment = total / ANIMATION_STEPS;
     let tick = 0;
 
-    setDisplayAmount(0);
+    startTransition(() => {
+      setDisplayAmount(0);
+    });
 
     const interval = setInterval(() => {
       tick += 1;

@@ -4,9 +4,12 @@ type AuditSummaryProps = {
   result: AuditResult;
 };
 
-export function AuditSummary({ result: _result }: AuditSummaryProps) {
+export function AuditSummary({ result }: AuditSummaryProps) {
   return (
-    <section className="mx-auto w-full max-w-4xl px-4 sm:px-6">
+    <section
+      className="mx-auto w-full max-w-4xl px-4 sm:px-6"
+      aria-label={result.id ? `Audit summary ${result.id}` : "Audit summary"}
+    >
       <div className="w-full rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 sm:p-8">
         <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
           AI-Generated Summary

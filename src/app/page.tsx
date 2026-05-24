@@ -4,10 +4,11 @@ import { startTransition, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ToolRow } from "@/components/ToolRow";
 import { TOOL_PLANS, USE_CASES } from "@/data/pricing";
+import { runAudit } from "@/lib/auditEngine";
+import { savePendingAudit } from "@/lib/auditStorage";
 import type { AuditFormData, ToolEntry, ToolName } from "@/types/audit";
 
 const FORM_STORAGE_KEY = "audit-form-data";
-const PENDING_AUDIT_KEY = "pending-audit";
 
 function createToolEntry(useCase: ToolEntry["useCase"] = "coding"): ToolEntry {
   const toolName: ToolName = "cursor";
@@ -129,7 +130,8 @@ export default function Home() {
       return;
     }
     setError(null);
-    localStorage.setItem(PENDING_AUDIT_KEY, JSON.stringify(formData));
+    const result = runAudit(formData);
+    savePendingAudit(formData, result);
     router.push("/audit");
   };
 

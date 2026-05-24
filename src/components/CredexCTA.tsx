@@ -6,46 +6,118 @@ import type { AuditResult } from "@/types/audit";
 
 type CredexCTAProps = {
   result: AuditResult;
+  auditId?: string;
+  totalMonthlySavings: number;
 };
 
-type CapturedLead = {
+function SubmitSuccess({
+  email,
+  totalMonthlySavings,
+}: {
   email: string;
-  companyName: string;
-  savings: number;
-};
-
-const LEAD_STORAGE_KEY = "captured-lead";
+  totalMonthlySavings: number;
+}) {
+  return (
+    <div className="mt-6 text-center sm:text-left">
+      <div
+        className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border-2 border-emerald-500/40 bg-emerald-500/10 sm:mx-0"
+        aria-hidden
+      >
+        <svg
+          className="h-7 w-7 text-emerald-400"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2.5}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M5 13l4 4L19 7"
+          />
+        </svg>
+      </div>
+      <h3 className="mt-4 text-xl font-bold text-white">You&apos;re all set!</h3>
+      <p className="mt-2 text-base text-zinc-400">
+        Check your inbox — we just sent your audit results to{" "}
+        <span className="font-medium text-zinc-200">{email}</span>
+      </p>
+      {totalMonthlySavings > 500 && (
+        <p className="mt-3 text-sm text-amber-400/90">
+          A Credex team member will reach out within 1 business day.
+        </p>
+      )}
+    </div>
+  );
+}
 
 function EmailCaptureForm({
   buttonText,
-  savings,
-  onSuccess,
+  auditId,
+  totalMonthlySavings,
+  teamSize,
 }: {
   buttonText: string;
-  savings: number;
-  onSuccess: () => void;
+  auditId?: string;
+  totalMonthlySavings: number;
+  teamSize: number;
 }) {
   const [email, setEmail] = useState("");
   const [companyName, setCompanyName] = useState("");
-  const [validationError, setValidationError] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const trimmed = email.trim();
-    if (!trimmed || !trimmed.includes("@")) {
-      setValidationError("Please enter a valid email address.");
+
+    if (!email || !email.includes("@")) {
+      setSubmitError("Please enter a valid email address");
       return;
     }
 
-    const lead: CapturedLead = {
-      email: trimmed,
-      companyName: companyName.trim(),
-      savings,
-    };
-    localStorage.setItem(LEAD_STORAGE_KEY, JSON.stringify(lead));
-    setValidationError(null);
-    onSuccess();
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      const response = await fetch("/api/capture-lead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email.trim(),
+          companyName: companyName.trim() || undefined,
+          auditId,
+          teamSize,
+          totalMonthlySavings,
+          website: "",
+        }),
+      });
+
+      if (response.ok) {
+        setSubmitted(true);
+      } else {
+        const data = (await response.json()) as { error?: string };
+        setSubmitError(
+          data.error || "Something went wrong. Please try again.",
+        );
+      }
+    } catch {
+      setSubmitError(
+        "Network error. Please check your connection and try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  if (submitted) {
+    return (
+      <SubmitSuccess
+        email={email.trim()}
+        totalMonthlySavings={totalMonthlySavings}
+      />
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="mt-6 space-y-3">
@@ -55,40 +127,34 @@ function EmailCaptureForm({
           value={email}
           onChange={(e) => {
             setEmail(e.target.value);
-            setValidationError(null);
+            setSubmitError(null);
           }}
           placeholder="your@email.com"
-          className="min-w-0 flex-1 rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+          disabled={isSubmitting}
+          className="min-w-0 flex-1 rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 disabled:opacity-50"
         />
         <input
           type="text"
           value={companyName}
           onChange={(e) => setCompanyName(e.target.value)}
           placeholder="Company (optional)"
-          className="min-w-0 flex-1 rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 sm:max-w-[200px]"
+          disabled={isSubmitting}
+          className="min-w-0 flex-1 rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 disabled:opacity-50 sm:max-w-[200px]"
         />
       </div>
-      {validationError && (
+      {submitError && (
         <p className="text-sm text-red-400" role="alert">
-          {validationError}
+          {submitError}
         </p>
       )}
       <button
         type="submit"
-        className="w-full rounded-lg border border-zinc-600 bg-zinc-800 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:border-zinc-500 hover:bg-zinc-700 sm:w-auto"
+        disabled={isSubmitting}
+        className="w-full rounded-lg border border-zinc-600 bg-zinc-800 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:border-zinc-500 hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
       >
-        {buttonText}
+        {isSubmitting ? "Submitting..." : buttonText}
       </button>
     </form>
-  );
-}
-
-function SuccessMessage() {
-  return (
-    <p className="mt-6 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm font-medium text-emerald-400">
-      ✅ You&apos;re on the list! We&apos;ll reach out when relevant credits
-      become available.
-    </p>
   );
 }
 
@@ -137,9 +203,15 @@ function HighSavingsCTA({ result }: { result: AuditResult }) {
   );
 }
 
-function ModerateSavingsCTA({ result }: { result: AuditResult }) {
-  const [submitted, setSubmitted] = useState(false);
-
+function ModerateSavingsCTA({
+  auditId,
+  totalMonthlySavings,
+  teamSize,
+}: {
+  auditId?: string;
+  totalMonthlySavings: number;
+  teamSize: number;
+}) {
   return (
     <div className="w-full rounded-2xl border border-zinc-700/80 bg-zinc-900/60 p-6 sm:p-10">
       <h2 className="text-xl font-bold text-white sm:text-3xl">
@@ -151,22 +223,25 @@ function ModerateSavingsCTA({ result }: { result: AuditResult }) {
         available.
       </p>
 
-      {submitted ? (
-        <SuccessMessage />
-      ) : (
-        <EmailCaptureForm
-          buttonText="Notify Me When Deals Match My Stack"
-          savings={result.totalMonthlySavings}
-          onSuccess={() => setSubmitted(true)}
-        />
-      )}
+      <EmailCaptureForm
+        buttonText="Notify Me When Deals Match My Stack"
+        auditId={auditId}
+        totalMonthlySavings={totalMonthlySavings}
+        teamSize={teamSize}
+      />
     </div>
   );
 }
 
-function OptimalCTA({ result }: { result: AuditResult }) {
-  const [submitted, setSubmitted] = useState(false);
-
+function OptimalCTA({
+  auditId,
+  totalMonthlySavings,
+  teamSize,
+}: {
+  auditId?: string;
+  totalMonthlySavings: number;
+  teamSize: number;
+}) {
   return (
     <div className="w-full rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 sm:p-10">
       <p className="text-4xl" aria-hidden>
@@ -185,30 +260,39 @@ function OptimalCTA({ result }: { result: AuditResult }) {
         know when new optimization opportunities appear for your tools.
       </p>
 
-      {submitted ? (
-        <SuccessMessage />
-      ) : (
-        <EmailCaptureForm
-          buttonText="Keep Me Posted on AI Pricing Changes"
-          savings={result.totalMonthlySavings}
-          onSuccess={() => setSubmitted(true)}
-        />
-      )}
+      <EmailCaptureForm
+        buttonText="Keep Me Posted on AI Pricing Changes"
+        auditId={auditId}
+        totalMonthlySavings={totalMonthlySavings}
+        teamSize={teamSize}
+      />
     </div>
   );
 }
 
-export function CredexCTA({ result }: CredexCTAProps) {
-  const savings = result.totalMonthlySavings;
+export function CredexCTA({
+  result,
+  auditId,
+  totalMonthlySavings,
+}: CredexCTAProps) {
+  const savings = totalMonthlySavings;
 
   return (
     <section className="mx-auto w-full max-w-4xl px-4 pb-16 pt-4 sm:px-6 sm:pb-20">
       {savings > 500 ? (
         <HighSavingsCTA result={result} />
       ) : savings > 0 ? (
-        <ModerateSavingsCTA result={result} />
+        <ModerateSavingsCTA
+          auditId={auditId}
+          totalMonthlySavings={totalMonthlySavings}
+          teamSize={result.formData.teamSize}
+        />
       ) : (
-        <OptimalCTA result={result} />
+        <OptimalCTA
+          auditId={auditId}
+          totalMonthlySavings={totalMonthlySavings}
+          teamSize={result.formData.teamSize}
+        />
       )}
     </section>
   );

@@ -9,9 +9,14 @@ import { CredexCTA } from "@/components/CredexCTA";
 import { RecommendationList } from "@/components/RecommendationList";
 import { SavingsHero } from "@/components/SavingsHero";
 import { runAudit } from "@/lib/auditEngine";
+import {
+  cacheAuditResult,
+  isAuditPersisted,
+  loadCurrentAuditResult,
+  markAuditPersisted,
+  PENDING_AUDIT_KEY,
+} from "@/lib/auditStorage";
 import type { AuditFormData, AuditResult } from "@/types/audit";
-
-const PENDING_AUDIT_KEY = "pending-audit";
 
 export default function AuditPage() {
   const router = useRouter();
@@ -31,21 +36,55 @@ export default function AuditPage() {
       return () => clearTimeout(timer);
     }
 
-    try {
-      const formData = JSON.parse(raw) as AuditFormData;
-      const auditResult = runAudit(formData);
-      startTransition(() => {
-        setResult(auditResult);
-        setIsLoading(false);
-      });
-    } catch (err) {
-      startTransition(() => {
-        setError(
-          err instanceof Error ? err.message : "Failed to run audit",
-        );
-        setIsLoading(false);
-      });
+    let cancelled = false;
+
+    async function loadAudit() {
+      try {
+        const formData = JSON.parse(raw) as AuditFormData;
+        let auditResult = loadCurrentAuditResult();
+
+        if (!auditResult) {
+          auditResult = runAudit(formData);
+          cacheAuditResult(auditResult);
+        }
+
+        if (!isAuditPersisted(auditResult.id)) {
+          try {
+            const response = await fetch("/api/audits", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(auditResult),
+            });
+            if (response.ok) {
+              markAuditPersisted(auditResult.id);
+            }
+          } catch (saveError) {
+            console.error("Failed to save audit to database:", saveError);
+          }
+        }
+
+        if (cancelled) return;
+
+        startTransition(() => {
+          setResult(auditResult);
+          setIsLoading(false);
+        });
+      } catch (err) {
+        if (cancelled) return;
+        startTransition(() => {
+          setError(
+            err instanceof Error ? err.message : "Failed to run audit",
+          );
+          setIsLoading(false);
+        });
+      }
     }
+
+    loadAudit();
+
+    return () => {
+      cancelled = true;
+    };
   }, [router]);
 
   if (isLoading) {
@@ -101,7 +140,11 @@ export default function AuditPage() {
         <SavingsHero result={result} />
         <AuditSummary result={result} />
         <RecommendationList result={result} />
-        <CredexCTA result={result} />
+        <CredexCTA
+          result={result}
+          auditId={result.id}
+          totalMonthlySavings={result.totalMonthlySavings}
+        />
       </main>
     </div>
   );

@@ -1,7 +1,5 @@
 # Devlog
 
-> To be completed — ongoing
-
 Daily development logs.
 
 ---
@@ -57,3 +55,17 @@ Daily development logs.
 **Blockers / what I'm stuck on:** The audit page is a client component, so the page title had to go in a separate `layout.tsx` — I didn't know that at first. ESLint's `react-hooks/set-state-in-effect` rule blocked CI again when reading from localStorage on mount; wrapping updates in `startTransition` fixed it but I still don't fully get why that's different. Building three completely different CredexCTA layouts from one savings number took longer than expected. On mobile, the recommendation card header (tool name + savings badge) needed extra layout work so nothing overflowed at 375px width.
 
 **Plan for tomorrow:** Wire up the Anthropic API for the real AI summary, connect Supabase database for lead storage, and set up Resend for confirmation emails.
+
+---
+
+## Day 5 — 2026-05-24
+
+**Hours worked:** 6
+
+**What I did:** Set up Supabase with two tables (`audits` + `leads`) and Row Level Security policies. Got Anthropic and Resend API keys. Built the `/api/summarize` route with graceful fallback when the API fails. Built the `/api/capture-lead` route with email validation, honeypot bot protection, Supabase storage, and Resend confirmation email. Added `/api/audits` to persist full audit results. Updated the CredexCTA to call the real backend. Tested the full flow on the live Vercel URL — email arrives in inbox, Supabase row appears.
+
+**What I learned:** What environment variables are and why they protect secrets. How Next.js API routes run server-side so the browser never sees the code. What a honeypot field is and why it stops bots without annoying real users. What Row Level Security (RLS) means in a database.
+
+**Blockers / what I'm stuck on:** Supabase inserts failed until the payload matched the real schema (`recommendations` is NOT NULL; no `generated_at` column — use `created_at`). One audit run wrote **three** rows in `audits` because the results page called `runAudit()` again (new UUID each time) and React Strict Mode double-ran the effect in dev — fixed by running the audit once on submit and saving with a session guard (`auditStorage.ts`). `ai_summary` stayed NULL until the summarize route updated the audit row by `id`. On `leads`, `role` and `team_size` were NULL because the email form only sent email and optional company — wired `team_size` from the audit; `role` still needs a form field if we want it filled.
+
+**Plan for tomorrow:** Build shareable public audit URLs with Open Graph tags, then write the entrepreneurial documents (GTM, ECONOMICS, LANDING_COPY, METRICS, PRICING_DATA).

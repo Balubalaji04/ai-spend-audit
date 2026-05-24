@@ -40,7 +40,7 @@ export type AuditRecommendation = {
 };
 
 export type AuditResult = {
-  id?: string;
+  id: string;
   formData: AuditFormData;
   recommendations: AuditRecommendation[];
   totalMonthlySavings: number;

@@ -36,12 +36,22 @@ export default function AuditPage() {
       return () => clearTimeout(timer);
     }
 
-    const pendingRaw = raw;
+    let formData: AuditFormData;
+    try {
+      formData = JSON.parse(raw) as AuditFormData;
+    } catch {
+      startTransition(() => {
+        setError("Invalid audit data");
+        setIsLoading(false);
+      });
+      const timer = setTimeout(() => router.replace("/"), 2000);
+      return () => clearTimeout(timer);
+    }
+
     let cancelled = false;
 
     async function loadAudit() {
       try {
-        const formData = JSON.parse(pendingRaw) as AuditFormData;
         let auditResult = loadCurrentAuditResult();
 
         if (!auditResult) {

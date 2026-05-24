@@ -36,11 +36,12 @@ export default function AuditPage() {
       return () => clearTimeout(timer);
     }
 
+    const pendingRaw = raw;
     let cancelled = false;
 
     async function loadAudit() {
       try {
-        const formData = JSON.parse(raw) as AuditFormData;
+        const formData = JSON.parse(pendingRaw) as AuditFormData;
         let auditResult = loadCurrentAuditResult();
 
         if (!auditResult) {

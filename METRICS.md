@@ -1,5 +1,13 @@
 # Metrics
 
-> To be completed — Day 5
+The North Star metric for SpendScope should be qualified leads generated per week, defined as users who complete an audit, see a savings result, and submit an email. Audits completed is too weak because a user can finish an audit, learn something useful, and disappear without creating any revenue path for Credex. Consultation calls booked is too far downstream because by the time that number drops, it is hard to know whether the problem was traffic quality, the form, the savings result, the CTA, or sales follow-up. Qualified leads sit in the middle: they prove the audit created enough perceived value for the user to trade contact information, and they create a sales motion Credex can act on.
 
-North star metrics placeholder.
+The first input metric is visitor-to-audit-start rate. It measures whether the landing page promise is clear enough to get people into the form. A healthy week-one number is 50-60%; by month three, with sharper copy and better examples, it should be 65%+. If it drops, rewrite the hero, move the CTA above the fold, and add a concrete example like “Cursor Business → Pro, save $40/seat/month.”
+
+The second input metric is audit completion rate. It measures whether the form is short and understandable. Week one should be at least 60%; month three should reach 75-80%. If it drops, reduce required fields, improve mobile layout, and add inline defaults for common plans so users do less manual typing.
+
+The third input metric is email capture rate, calculated as emails captured divided by audits completed. Week one should be 15-20%; month three should be 25%+. If it drops, the results page is not making the savings feel valuable enough. The fix is to improve the summary, make the annual savings number more prominent, and clarify what the user gets by entering an email.
+
+Day-one analytics should instrument only events that explain the funnel: `audit_started`, `tool_added`, `tool_removed`, `audit_completed`, `email_capture_viewed`, `email_captured`, `share_link_generated`, `share_link_copied`, and `consultation_clicked`. These events show where users enter, where they abandon, whether they value the result enough to share it, and whether they move toward Credex revenue. Avoid vanity events like every button hover or scroll depth until the core funnel is understood.
+
+Pivot thresholds should be explicit. If after two weeks of active promotion the email capture rate is below 8%, the result page value proposition is not strong enough and needs redesign. If audit completion is below 50%, the input flow is too much work and should be simplified before driving more traffic. If 100 qualified leads produce fewer than 5 consultation clicks or booked calls, the Credex offer is not connected clearly enough to the audit result and the CTA should change from generic “learn more” language to a savings-specific offer.

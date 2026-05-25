@@ -69,3 +69,17 @@ Daily development logs.
 **Blockers / what I'm stuck on:** Supabase inserts failed until the payload matched the real schema (`recommendations` is NOT NULL; no `generated_at` column — use `created_at`). One audit run wrote **three** rows in `audits` because the results page called `runAudit()` again (new UUID each time) and React Strict Mode double-ran the effect in dev — fixed by running the audit once on submit and saving with a session guard (`auditStorage.ts`). `ai_summary` stayed NULL until the summarize route updated the audit row by `id`. On `leads`, `role` and `team_size` were NULL because the email form only sent email and optional company — wired `team_size` from the audit; `role` still needs a form field if we want it filled.
 
 **Plan for tomorrow:** Build shareable public audit URLs with Open Graph tags, then write the entrepreneurial documents (GTM, ECONOMICS, LANDING_COPY, METRICS, PRICING_DATA).
+
+---
+
+## Day 6 — 2026-05-25
+
+**Hours worked:** [X]
+
+**What I did:** Built the save-audit API route that persists audits to Supabase. Built the public shareable audit page at `/audit/[id]` as a server component with Open Graph meta tags and a viral loop CTA. Added a share button to the results page that copies the URL to clipboard. Manually verified all 8 tool prices from official vendor pages and wrote `PRICING_DATA.md`. Wrote `GTM.md` with specific channels and outreach scripts. Wrote `ECONOMICS.md` with full funnel math showing 3.2 customers breaks even on the tool build. Wrote `LANDING_COPY.md` and `METRICS.md`.
+
+**What I learned:** How Open Graph tags create rich preview cards on Twitter and LinkedIn — they are just HTML meta tags in the page head. How Next.js `generateMetadata()` works for dynamic pages. How to think about unit economics by working backwards from a revenue target.
+
+**Blockers / what I'm stuck on:** The hardest part was understanding the difference between private audit results and public shared audit pages. I had to make sure the shareable page only stores privacy-safe fields and does not expose email, company name, monthly spend, or other identifying details. Next.js dynamic route typing also required extra care because newer App Router versions expect async `params` in generated page types. Pricing research took longer than expected because vendor pricing pages change names and plans often — for example ChatGPT Team became Business, Cursor now has Pro+/Ultra, and Windsurf changed its Pro and Teams pricing.
+
+**Plan for tomorrow:** The three most important things left — talk to 3 real people for `USER_INTERVIEWS.md` (do this first), write `REFLECTION.md` honestly, complete `README.md` and `ARCHITECTURE.md`, run Lighthouse audit, final submission check.
